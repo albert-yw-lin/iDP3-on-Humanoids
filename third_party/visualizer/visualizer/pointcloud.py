@@ -103,7 +103,7 @@ class Visualizer:
     
 
     def visualize_pointcloud(self, pointcloud, color:tuple=None, img_path=None):
-        point_size = 10
+        point_size = 3
         trace = self._generate_trace(pointcloud, color=color, size=point_size, opacity=1.0)
         layout = go.Layout(margin=dict(l=0, r=0, b=0, t=0))
         fig = go.Figure(data=[trace], layout=layout)
@@ -148,9 +148,9 @@ class Visualizer:
                 zaxis=dict(visible=False, range=[-1, 2]),
                 bgcolor='white',  # 设置背景色为白色
                 camera=dict(
-                    eye=dict(x=0., y=0.0, z=-0.7),  # Adjust this value to set the camera view,
-                    up=dict(x=0, y=-0.5, z=0),   # Ensure the y-axis is up
-                    center=dict(x=0, y=0, z=1) # Look towards the origin
+                    eye=dict(x=1.5, y=-1.5, z=-1.5),  # Position camera to view from top-right
+                    up=dict(x=0, y=0, z=1),   # Keep y-axis as up
+                    center=dict(x=0, y=0, z=0) # Look at the origin
                 )
             )
         )

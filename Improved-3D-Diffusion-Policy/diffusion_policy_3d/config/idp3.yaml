@@ -1,12 +1,12 @@
 defaults:
-  - task: dexdeform_flip_pointcloud
+  - task: r1_cup_pointcloud
 
 name: train_diffusion_unet_hybrid
 _target_: diffusion_policy_3d.workspace.idp3_workspace.iDP3Workspace
 
 task_name: ${task.name}
 shape_meta: ${task.shape_meta}
-exp_name: "debug"
+exp_name: "cup"
 
 # n_obs_steps: 2
 # n_obs_steps: 1
@@ -118,7 +118,7 @@ training:
   resume: True
   lr_scheduler: cosine
   lr_warmup_steps: 500
-  num_epochs: 301
+  num_epochs: 1000
   gradient_accumulate_every: 1
   use_ema: True
   rollout_every: 400
@@ -135,11 +135,11 @@ logging:
   id: null
   mode: online
   name: ${training.seed}
-  project: humanoid_mimic
+  project: idp3_r1
   resume: true
   tags:
   - train_diffusion_unet_hybrid
-  - dexdeform
+  - GalaxeaR1
 
 checkpoint:
   save_ckpt: False # if True, save checkpoint every checkpoint_every
