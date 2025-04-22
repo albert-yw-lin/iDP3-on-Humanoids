@@ -110,18 +110,23 @@ class DiffusionImagePolicy(BasePolicy):
         # normalize input
         nobs = self.normalizer.normalize(obs_dict)
 
-        nobs['image'] /= 255.0
-        if nobs['image'].shape[-1] == 3:
-            if len(nobs['image'].shape) == 5:
-                nobs['image'] = nobs['image'].permute(0, 1, 4, 2, 3)
-            if len(nobs['image'].shape) == 4:
-                nobs['image'] = nobs['image'].permute(0, 3, 1, 2)
-        if self.use_depth and not self.use_depth_only:
-            nobs['image'] = torch.cat([nobs['image'], nobs['depth'].unsqueeze(-3)], dim=-3)
-        if self.use_depth and self.use_depth_only:
-            nobs['image'] = nobs['depth'].unsqueeze(-3)
-
+        # Process each camera view
+        for key in ['head_image', 'left_wrist_image', 'right_wrist_image']:
+            if key in nobs:
+                nobs[key] /= 255.0
+                if nobs[key].shape[-1] == 3:
+                    if len(nobs[key].shape) == 5:
+                        nobs[key] = nobs[key].permute(0, 1, 4, 2, 3)
+                    if len(nobs[key].shape) == 4:
+                        nobs[key] = nobs[key].permute(0, 3, 1, 2)
         
+        if self.use_depth and not self.use_depth_only:
+            # nobs['image'] = torch.cat([nobs['image'], nobs['depth'].unsqueeze(-3)], dim=-3)
+            raise NotImplementedError("Depth is not used in the model. May need to change this for multi-view")
+        if self.use_depth and self.use_depth_only:
+            # nobs['image'] = nobs['depth'].unsqueeze(-3)
+            raise NotImplementedError("Depth is not used in the model. May need to change this for multi-view")
+
         value = next(iter(nobs.values()))
         B, To = value.shape[:2]
         T = self.horizon
@@ -136,7 +141,6 @@ class DiffusionImagePolicy(BasePolicy):
         # handle different ways of passing observation
         local_cond = None
         global_cond = None
-
             
         # condition through global feature
         this_nobs = dict_apply(nobs, lambda x: x[:,:self.n_obs_steps,...])
@@ -144,7 +148,6 @@ class DiffusionImagePolicy(BasePolicy):
         # reshape back to B, Do
         global_cond = nobs_features.reshape(B, -1)
      
-            
         # empty data for action
         cond_data = torch.zeros(size=(B, T, Da), device=device, dtype=dtype)
         cond_mask = torch.zeros_like(cond_data, dtype=torch.bool)
@@ -220,17 +223,24 @@ class DiffusionImagePolicy(BasePolicy):
         """
         # normalize input
         nobs = self.normalizer.normalize(obs_dict)
-        # normalize image by hand
-        nobs['image'] /= 255.0
-        if nobs['image'].shape[-1] == 3:
-            if len(nobs['image'].shape) == 5:
-                nobs['image'] = nobs['image'].permute(0, 1, 4, 2, 3)
-            if len(nobs['image'].shape) == 4:
-                nobs['image'] = nobs['image'].permute(0, 3, 1, 2)
+        
+        # Process each camera view
+        for key in ['head_image', 'left_wrist_image', 'right_wrist_image']:
+            if key in nobs:
+                nobs[key] /= 255.0
+                if nobs[key].shape[-1] == 3:
+                    if len(nobs[key].shape) == 5:
+                        nobs[key] = nobs[key].permute(0, 1, 4, 2, 3)
+                    if len(nobs[key].shape) == 4:
+                        nobs[key] = nobs[key].permute(0, 3, 1, 2)
+        
         if self.use_depth and not self.use_depth_only:
-            nobs['image'] = torch.cat([nobs['image'], nobs['depth'].unsqueeze(-3)], dim=-3)
+            # nobs['image'] = torch.cat([nobs['image'], nobs['depth'].unsqueeze(-3)], dim=-3)
+            raise NotImplementedError("Depth is not used in the model. May need to change this for multi-view")
         if self.use_depth and self.use_depth_only:
-            nobs['image'] = nobs['depth'].unsqueeze(-3)
+            # nobs['image'] = nobs['depth'].unsqueeze(-3)
+            raise NotImplementedError("Depth is not used in the model. May need to change this for multi-view")
+        
         value = next(iter(nobs.values()))
         B, To = value.shape[:2]
         T = self.horizon
@@ -296,17 +306,23 @@ class DiffusionImagePolicy(BasePolicy):
         # normalize input
         assert 'valid_mask' not in batch
         nobs = self.normalizer.normalize(batch['obs'])
-        # normalize image by hand
-        nobs['image'] /= 255.0
-        if nobs['image'].shape[-1] == 3:
-            if len(nobs['image'].shape) == 5:
-                nobs['image'] = nobs['image'].permute(0, 1, 4, 2, 3)
-            if len(nobs['image'].shape) == 4:
-                nobs['image'] = nobs['image'].permute(0, 3, 1, 2)
+        
+        # Process each camera view
+        for key in ['head_image', 'left_wrist_image', 'right_wrist_image']:
+            if key in nobs:
+                nobs[key] /= 255.0
+                if nobs[key].shape[-1] == 3:
+                    if len(nobs[key].shape) == 5:
+                        nobs[key] = nobs[key].permute(0, 1, 4, 2, 3)
+                    if len(nobs[key].shape) == 4:
+                        nobs[key] = nobs[key].permute(0, 3, 1, 2)
+        
         if self.use_depth and not self.use_depth_only:
-            nobs['image'] = torch.cat([nobs['image'], nobs['depth'].unsqueeze(-3)], dim=-3)
+            # nobs['image'] = torch.cat([nobs['image'], nobs['depth'].unsqueeze(-3)], dim=-3)
+            raise NotImplementedError("Depth is not used in the model. May need to change this for multi-view")
         if self.use_depth and self.use_depth_only:
-            nobs['image'] = nobs['depth'].unsqueeze(-3)
+            # nobs['image'] = nobs['depth'].unsqueeze(-3)
+            raise NotImplementedError("Depth is not used in the model. May need to change this for multi-view")
         nactions = self.normalizer['action'].normalize(batch['action'])
         batch_size = nactions.shape[0]
         horizon = nactions.shape[1]

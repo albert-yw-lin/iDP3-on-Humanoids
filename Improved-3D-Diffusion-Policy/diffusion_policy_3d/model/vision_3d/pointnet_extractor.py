@@ -104,8 +104,8 @@ class iDP3Encoder(nn.Module):
         cprint(f"[iDP3Encoder] state shape: {self.state_shape}", "yellow")
         
 
-        self.use_pc_color = use_pc_color
-        self.pointnet_type = pointnet_type
+        # self.use_pc_color = use_pc_color
+        # self.pointnet_type = pointnet_type
         
         self.downsample = point_downsample
         if self.downsample:
@@ -117,7 +117,7 @@ class iDP3Encoder(nn.Module):
         
         if pointnet_type == "multi_stage_pointnet":
             from .multi_stage_pointnet import MultiStagePointNetEncoder
-            self.extractor = MultiStagePointNetEncoder(out_channels=pointcloud_encoder_cfg.out_channels)
+            self.extractor = MultiStagePointNetEncoder(out_channels=pointcloud_encoder_cfg.out_channels, use_pc_color=use_pc_color)
         else:
             raise NotImplementedError(f"pointnet_type: {pointnet_type}")
 
@@ -141,7 +141,7 @@ class iDP3Encoder(nn.Module):
         assert len(points.shape) == 3, cprint(f"point cloud shape: {points.shape}, length should be 3", "red")
 
         # points = torch.transpose(points, 1, 2)   # B * 3 * N
-        # points: B * 3 * (N + sum(Ni))
+        # points: B * 3/6 * (N + sum(Ni))
         if self.downsample:
             points = self.point_preprocess(points, self.num_points)
            

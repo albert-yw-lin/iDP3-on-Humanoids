@@ -17,3 +17,5 @@ training_data_example/
 
 data/
 visualizations/
+
+*.png

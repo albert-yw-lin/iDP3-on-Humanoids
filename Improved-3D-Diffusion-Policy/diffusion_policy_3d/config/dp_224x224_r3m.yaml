@@ -1,16 +1,16 @@
 defaults:
   - _self_
-  - task: adroit_door_image
+  - task: r1_cup_image
 
 name: train_diffusion_unet_hybrid
 _target_: diffusion_policy_3d.workspace.dp_workspace.DPWorkspace
 
 task_name: ${task.name}
 shape_meta: ${task.shape_meta}
-exp_name: "debug"
+exp_name: "cup"
 
 horizon: 16
-n_action_steps: 16
+n_action_steps: 15
 
 n_obs_steps: 2
 n_latency_steps: 0
@@ -116,7 +116,7 @@ training:
   resume: True
   lr_scheduler: cosine
   lr_warmup_steps: 500
-  num_epochs: 301
+  num_epochs: 3001
   gradient_accumulate_every: 1
   use_ema: True
   rollout_every: 200
@@ -135,11 +135,11 @@ logging:
   id: null
   mode: online
   name: ${training.seed}
-  project: humanoid_mimic
+  project: idp3_r1
   resume: true
   tags:
   - train_diffusion_unet_hybrid
-  - adroit
+  - GalaxeaR1
 
 checkpoint:
   save_ckpt: False

@@ -46,23 +46,23 @@ def visualize_hdf5_episode(hdf5_path, episode_idx=0):
             axes[0].legend()
         
         # Plot arm positions
-        if 'obs/joint_state/left_arm/joint_position' in episode:
-            left_arm_pos = episode['obs/joint_state/left_arm/joint_position'][:, :6]  # First 6 dimensions
-            time = np.arange(len(left_arm_pos))
-            for i in range(left_arm_pos.shape[1]):
-                axes[1].plot(time, left_arm_pos[:, i], label=f'Joint {i+1}')
-            axes[1].set_title('Left Arm Joint Positions')
+        if 'obs/joint_state/right_arm/joint_position' in episode:
+            right_arm_pos = episode['obs/joint_state/right_arm/joint_position'][:, :6]  # First 6 dimensions
+            time = np.arange(len(right_arm_pos))
+            for i in range(right_arm_pos.shape[1]):
+                axes[1].plot(time, right_arm_pos[:, i], label=f'Joint {i+1}')
+            axes[1].set_title('Right Arm Joint Positions')
             axes[1].set_xlabel('Time Steps')
             axes[1].set_ylabel('Position')
             axes[1].legend()
         
         # Plot actions
-        if 'action/left_arm' in episode:
-            left_arm_action = episode['action/left_arm'][:]
-            time = np.arange(len(left_arm_action))
-            for i in range(left_arm_action.shape[1]):
-                axes[2].plot(time, left_arm_action[:, i], label=f'Joint {i+1}')
-            axes[2].set_title('Left Arm Actions')
+        if 'action/right_arm' in episode:
+            right_arm_action = episode['action/right_arm'][:]
+            time = np.arange(len(right_arm_action))
+            for i in range(right_arm_action.shape[1]):
+                axes[2].plot(time, right_arm_action[:, i], label=f'Joint {i+1}')
+            axes[2].set_title('Right Arm Actions')
             axes[2].set_xlabel('Time Steps')
             axes[2].set_ylabel('Action')
             axes[2].legend()
@@ -139,19 +139,19 @@ def visualize_zarr_data(zarr_path, episode_idx=0):
     axes[0].set_ylabel('Position')
     axes[0].legend()
     
-    # Left arm positions (indices 7-13)
+    # Right arm positions (indices 14-20)
     for i in range(6):
-        axes[1].plot(time, states[:, i+7], label=f'Joint {i+1}')
-    axes[1].set_title('Left Arm Joint Positions')
+        axes[1].plot(time, states[:, i+14], label=f'Joint {i+1}')
+    axes[1].set_title('Right Arm Joint Positions')
     axes[1].set_xlabel('Time Steps')
     axes[1].set_ylabel('Position')
     axes[1].legend()
     
-    # Left arm actions (indices 7-13)
+    # Right arm actions (indices 14-20)
     actions = root['data/action'][start_idx:end_idx]
     for i in range(6):
-        axes[2].plot(time, actions[:, i+7], label=f'Joint {i+1}')
-    axes[2].set_title('Left Arm Actions')
+        axes[2].plot(time, actions[:, i+14], label=f'Joint {i+1}')
+    axes[2].set_title('Right Arm Actions')
     axes[2].set_xlabel('Time Steps')
     axes[2].set_ylabel('Action')
     axes[2].legend()
@@ -244,19 +244,19 @@ def compare_datasets(hdf5_path, zarr_path, episode_idx=0):
 
     
     # Compare left arm actions
-    if 'action/left_arm' in h5_episode and 'action' in root['data']:
-        h5_left_arm = h5_episode['action/left_arm'][:]
+    if 'action/right_arm' in h5_episode and 'action' in root['data']:
+        h5_right_arm = h5_episode['action/right_arm'][:]
         zarr_actions = root['data/action'][start_idx:end_idx]
-        zarr_left_arm = zarr_actions[:, 7:13]  # Indices 7-13 are left arm
+        zarr_right_arm = zarr_actions[:, 14:20]  # Indices 7-13 are left arm
         
-        min_len = min(len(h5_left_arm), len(zarr_left_arm))
+        min_len = min(len(h5_right_arm), len(zarr_right_arm))
 
         # Calculate differences
-        diff = h5_left_arm[:min_len] - zarr_left_arm[:min_len]
+        diff = h5_right_arm[:min_len] - zarr_right_arm[:min_len]
         max_diff = np.max(np.abs(diff))
         mean_diff = np.mean(np.abs(diff))
         
-        print(f"Left arm action comparison:")
+        print(f"Right arm action comparison:")
         print(f"  Max absolute difference: {max_diff:.6f}")
         print(f"  Mean absolute difference: {mean_diff:.6f}")
         
@@ -265,17 +265,17 @@ def compare_datasets(hdf5_path, zarr_path, episode_idx=0):
         
         # Plot original data
         time = np.arange(min_len)
-        for i in range(min(h5_left_arm.shape[1], zarr_left_arm.shape[1])):
-            axes[0].plot(time, h5_left_arm[:min_len, i], 'b-', label=f'HDF5 Joint {i+1}')
-            axes[0].plot(time, zarr_left_arm[:min_len, i], 'r--', label=f'Zarr Joint {i+1}')
+        for i in range(min(h5_right_arm.shape[1], zarr_right_arm.shape[1])):
+            axes[0].plot(time, h5_right_arm[:min_len, i], 'b-', label=f'HDF5 Joint {i+1}')
+            axes[0].plot(time, zarr_right_arm[:min_len, i], 'r--', label=f'Zarr Joint {i+1}')
         
-        axes[0].set_title('Left Arm Actions Comparison')
+        axes[0].set_title('Right Arm Actions Comparison')
         axes[0].set_xlabel('Time Steps')
         axes[0].set_ylabel('Action')
         axes[0].legend()
         
         # Plot differences
-        for i in range(min(h5_left_arm.shape[1], zarr_left_arm.shape[1])):
+        for i in range(min(h5_right_arm.shape[1], zarr_right_arm.shape[1])):
             axes[1].set_ylim(5, -5)
             axes[1].plot(time, diff[:, i], label=f'Joint {i+1}')
         
@@ -292,12 +292,68 @@ def compare_datasets(hdf5_path, zarr_path, episode_idx=0):
     else:
         print("No left arm actions found in HDF5 or Zarr")
 
+    # Compare images
+    print("\n=== Image Comparison ===")
+    image_types = ['head', 'left_wrist', 'right_wrist']
+    
+    for img_type in image_types:
+        h5_path = f'obs/rgb/{img_type}/img'
+        zarr_path = f'{img_type}_img'
+
+        if h5_path in h5_episode and zarr_path in root['data']:
+            # Get middle frame for comparison
+            mid_idx = h5_length // 2
+            h5_img = h5_episode[h5_path][mid_idx]
+            zarr_img = root['data'][zarr_path][start_idx + mid_idx]
+            
+            # Calculate differences
+            diff = h5_img.astype(np.float32) - zarr_img.astype(np.float32)
+            max_diff = np.max(np.abs(diff))
+            mean_diff = np.mean(np.abs(diff))
+            
+            print(f"\n{img_type.replace('_', ' ').title()} image comparison:")
+            print(f"  Max absolute difference: {max_diff:.6f}")
+            print(f"  Mean absolute difference: {mean_diff:.6f}")
+            
+            # Plot comparison
+            fig, axes = plt.subplots(2, 2, figsize=(12, 10))
+            
+            # Plot HDF5 image
+            axes[0, 0].imshow(h5_img)
+            axes[0, 0].set_title(f'HDF5 {img_type.replace("_", " ").title()} Image')
+            axes[0, 0].axis('off')
+            
+            # Plot Zarr image
+            axes[0, 1].imshow(zarr_img)
+            axes[0, 1].set_title(f'Zarr {img_type.replace("_", " ").title()} Image')
+            axes[0, 1].axis('off')
+            
+            # Plot difference
+            diff_plot = axes[1, 0].imshow(diff, cmap='RdBu', vmin=-255, vmax=255)
+            axes[1, 0].set_title('Difference (HDF5 - Zarr)')
+            axes[1, 0].axis('off')
+            plt.colorbar(diff_plot, ax=axes[1, 0])
+            
+            # Plot histogram of differences
+            axes[1, 1].hist(diff.flatten(), bins=50, range=(-255, 255))
+            axes[1, 1].set_title('Difference Histogram')
+            axes[1, 1].set_xlabel('Pixel Difference')
+            axes[1, 1].set_ylabel('Count')
+            
+            plt.tight_layout()
+            plt.savefig(f'image_comparison_{img_type}.png')
+            plt.close()
+            
+            print(f"Image comparison visualization saved to image_comparison_{img_type}.png")
+        else:
+            print(f"No {img_type} images found in HDF5 or Zarr")
+
 def main():
     parser = argparse.ArgumentParser(description="Convert HDF5 dataset to Zarr format and verify the conversion")
     parser.add_argument("--hdf5_path", type=str, required=True, help="Path to HDF5 file")
     parser.add_argument("--zarr_path", type=str, required=True, help="Path to save Zarr dataset")
     parser.add_argument("--skip_conversion", action="store_true", help="Skip conversion and only verify existing Zarr dataset")
-    parser.add_argument("--episode_idx", type=int, default=14, help="Episode index to visualize (default: 0)")    
+    parser.add_argument("--episode_idx", type=int, default=1, help="Episode index to visualize (default: 0)")    
     args = parser.parse_args()
     
     # Convert dataset if not skipped

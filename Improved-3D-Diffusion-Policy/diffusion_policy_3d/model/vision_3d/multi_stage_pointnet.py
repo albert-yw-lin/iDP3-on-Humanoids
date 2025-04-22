@@ -19,10 +19,15 @@ class MultiStagePointNetEncoder(nn.Module):
         self.h_dim = h_dim
         self.out_channels = out_channels
         self.num_layers = num_layers
+        self.use_pc_color = kwargs.get('use_pc_color', False)
+        if self.use_pc_color:
+            in_channels = 6
+        else:
+            in_channels = 3
 
         self.act = nn.LeakyReLU(negative_slope=0.0, inplace=False)
 
-        self.conv_in = nn.Conv1d(3, h_dim, kernel_size=1)
+        self.conv_in = nn.Conv1d(in_channels, h_dim, kernel_size=1)
         self.layers, self.global_layers = nn.ModuleList(), nn.ModuleList()
         for i in range(self.num_layers):
             self.layers.append(nn.Conv1d(h_dim, h_dim, kernel_size=1))
@@ -30,7 +35,7 @@ class MultiStagePointNetEncoder(nn.Module):
         self.conv_out = nn.Conv1d(h_dim * self.num_layers, out_channels, kernel_size=1)
 
     def forward(self, x):
-        x = x.transpose(1, 2) # [B, N, 3] --> [B, 3, N]
+        x = x.transpose(1, 2) # [B, N, 6] --> [B, 6, N]
         y = self.act(self.conv_in(x))
         feat_list = []
         for i in range(self.num_layers):

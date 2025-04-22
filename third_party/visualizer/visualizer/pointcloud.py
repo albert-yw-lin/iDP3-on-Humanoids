@@ -143,14 +143,14 @@ class Visualizer:
                 #     gridcolor='grey',      # 设置网格颜色为灰色
                 # ),
                 # close all axis, all line, all grid, all ticks
-                xaxis=dict(visible=False, range=[-1, 1]),
+                xaxis=dict(visible=False, range=[0, 2]),
                 yaxis=dict(visible=False, range=[-1, 1]),
-                zaxis=dict(visible=False, range=[-1, 2]),
+                zaxis=dict(visible=False, range=[-0.5, 1.6]),
                 bgcolor='white',  # 设置背景色为白色
                 camera=dict(
-                    eye=dict(x=1.5, y=-1.5, z=-1.5),  # Position camera to view from top-right
+                    eye=dict(x=1.0, y=-2.0, z=-0.5),  # Position camera to view from top-right
                     up=dict(x=0, y=0, z=1),   # Keep y-axis as up
-                    center=dict(x=0, y=0, z=0) # Look at the origin
+                    center=dict(x=0.5, y=0, z=0) # Look at the origin
                 )
             )
         )

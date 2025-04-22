@@ -3,18 +3,29 @@ name: cup
 shape_meta: &shape_meta
   # acceptable types: rgb, low_dim
   obs:
-    point_cloud:
-      shape: [4096, 6]
-      type: point_cloud
+    head_image:
+      shape: [3, 224, 224]
+      type: rgb
+      horizon: 2
+    left_wrist_image:
+      shape: [3, 224, 224]
+      type: rgb
+      horizon: 2
+    right_wrist_image:
+      shape: [3, 224, 224]
+      type: rgb
+      horizon: 2
     agent_pos:
       shape: [21]
       type: low_dim
+      horizon: 2
   action:
     shape: [21]
+    horizon: 16
 
 
 dataset:
-  _target_: diffusion_policy_3d.dataset.r1_cup_dataset_3d.R1CupDataset3D
+  _target_: diffusion_policy_3d.dataset.r1_cup_dataset_image.R1CupDatasetImage
   zarr_path: data/cup_10ep #NOTE: modeify this to 10ep or 1ep, or overwrite this in train_policy.sh
   horizon: ${horizon}
   pad_before: ${eval:'${n_obs_steps}-1'}
@@ -22,5 +33,5 @@ dataset:
   seed: 42
   val_ratio: 0.00
   max_train_episodes: 90
-
-  num_points: ${policy.pointcloud_encoder_cfg.num_points}
+  use_img: true
+  use_depth: false

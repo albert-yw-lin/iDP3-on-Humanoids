@@ -58,7 +58,7 @@ class DPWorkspace(BaseWorkspace):
         # configure training state
         self.global_step = 0
         self.epoch = 0
-
+    
     def run(self):
         cfg = copy.deepcopy(self.cfg)
         # resume training
@@ -77,8 +77,11 @@ class DPWorkspace(BaseWorkspace):
         normalizer = dataset.get_normalizer()
 
         # configure validation dataset
-        val_dataset = dataset.get_validation_dataset()
-        val_dataloader = DataLoader(val_dataset, **cfg.val_dataloader)
+        # val_dataset = dataset.get_validation_dataset()
+        # val_dataloader = DataLoader(val_dataset, **cfg.val_dataloader)
+        
+        # configure validation dataset - using training dataset for validation
+        val_dataloader = train_dataloader
 
         self.model.set_normalizer(normalizer)
         if cfg.training.use_ema:
@@ -139,7 +142,7 @@ class DPWorkspace(BaseWorkspace):
         train_sampling_batch = None
 
         if cfg.training.debug:
-            cfg.training.num_epochs = 2
+            cfg.training.num_epochs = 10
             cfg.training.max_train_steps = 10
             cfg.training.max_val_steps = 3
             cfg.training.rollout_every = 1
@@ -151,7 +154,7 @@ class DPWorkspace(BaseWorkspace):
             verbose = False
         
         
-        RUN_VALIDATION = False # reduce time cost
+        RUN_VALIDATION = True # reduce time cost
         
         # training loop
         log_path = os.path.join(self.output_dir, 'logs.json.txt')
@@ -234,6 +237,7 @@ class DPWorkspace(BaseWorkspace):
                             val_loss = torch.mean(torch.tensor(val_losses)).item()
                             # log epoch average validation loss
                             step_log['val_loss'] = val_loss
+                            cprint(f"Epoch {self.epoch} validation loss: {val_loss:.4f}", 'cyan')
 
                 # run diffusion sampling on a training batch
                 if (self.epoch % cfg.training.sample_every) == 0:

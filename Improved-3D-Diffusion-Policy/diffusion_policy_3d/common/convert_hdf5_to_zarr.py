@@ -25,6 +25,7 @@ def convert_hdf5_to_zarr(hdf5_path, zarr_path):
     # Open HDF5 file
     with h5py.File(hdf5_path, "r", swmr=True, libver="latest") as h5file:
         episode_keys = sorted(list(h5file.keys()))
+        # episode_keys = ['demo_9']
         
         # Create Zarr store
         store = zarr.DirectoryStore(zarr_path)
@@ -62,6 +63,19 @@ def convert_hdf5_to_zarr(hdf5_path, zarr_path):
         point_clouds = data_group.create_dataset('point_cloud', shape=(total_frames, pcd_shape[0], pcd_shape[1]),
                                         dtype=np.float32, chunks=(64, pcd_shape[0], pcd_shape[1]))
         
+        # Get image shapes from first episode
+        head_img_shape = h5file[episode_keys[0]]['obs/rgb/head/img'].shape[1:]  # (H, W, 3)
+        left_wrist_img_shape = h5file[episode_keys[0]]['obs/rgb/left_wrist/img'].shape[1:]  # (H, W, 3)
+        right_wrist_img_shape = h5file[episode_keys[0]]['obs/rgb/right_wrist/img'].shape[1:]  # (H, W, 3)
+        
+        # Create image datasets
+        head_imgs = data_group.create_dataset('head_img', shape=(total_frames,) + head_img_shape,
+                                     dtype=np.uint8, chunks=(32,) + head_img_shape)
+        left_wrist_imgs = data_group.create_dataset('left_wrist_img', shape=(total_frames,) + left_wrist_img_shape,
+                                           dtype=np.uint8, chunks=(32,) + left_wrist_img_shape)
+        right_wrist_imgs = data_group.create_dataset('right_wrist_img', shape=(total_frames,) + right_wrist_img_shape,
+                                            dtype=np.uint8, chunks=(32,) + right_wrist_img_shape)
+        
         # Create episode_ends array
         episode_ends = np.cumsum(episode_lengths)
         meta_group.create_dataset('episode_ends', data=episode_ends, dtype=np.int64)
@@ -81,11 +95,11 @@ def convert_hdf5_to_zarr(hdf5_path, zarr_path):
             # Left gripper. 
             # Debug note: the first[:] converts hdpy.Dataset object to numpy array, 
             # the second[:, np.newaxis] converts 1D array to 2D array
-            states[frame_idx:frame_idx+ep_len, 13:14] = episode['obs/gripper_state/left_gripper/gripper_position'][:][:, np.newaxis]
+            states[frame_idx:frame_idx+ep_len, 13:14] = episode['obs/gripper_state/left_gripper/gripper_position'][:][:, np.newaxis] / 100.0  # Normalize to 0-1
             # Right arm (exclude gripper)
             states[frame_idx:frame_idx+ep_len, 14:20] = episode['obs/joint_state/right_arm/joint_position'][:, :-1]
             # Right gripper
-            states[frame_idx:frame_idx+ep_len, 20:21] = episode['obs/gripper_state/right_gripper/gripper_position'][:][:, np.newaxis]
+            states[frame_idx:frame_idx+ep_len, 20:21] = episode['obs/gripper_state/right_gripper/gripper_position'][:][:, np.newaxis] / 100.0  # Normalize to 0-1
             
             # Action data
             actions[frame_idx:frame_idx+ep_len, 0:3] = episode['action/mobile_base'][:]
@@ -103,6 +117,11 @@ def convert_hdf5_to_zarr(hdf5_path, zarr_path):
                 # Combine xyz and rgb into single array
                 combined = np.concatenate([xyz[t], rgb[t]], axis=1)
                 point_clouds[frame_idx+t] = combined
+            
+            # Image data
+            head_imgs[frame_idx:frame_idx+ep_len] = episode['obs/rgb/head/img'][:]
+            left_wrist_imgs[frame_idx:frame_idx+ep_len] = episode['obs/rgb/left_wrist/img'][:]
+            right_wrist_imgs[frame_idx:frame_idx+ep_len] = episode['obs/rgb/right_wrist/img'][:]
                 
             frame_idx += ep_len
     

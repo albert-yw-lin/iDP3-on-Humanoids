@@ -56,7 +56,6 @@ for episode_idx, episode_end in enumerate(all_episode_ends):
     cprint(f"replay episode {episode_idx}", "green")
     # replay image
     for i in range(point_cloud_episode.shape[0]):
-        
         pc = point_cloud_episode[i]
 
         # downsample
