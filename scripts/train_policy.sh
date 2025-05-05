@@ -1,13 +1,14 @@
 # Examples:
 
-#   bash scripts/train_policy.sh idp3 gr1_dex-3d 0913_example
+#   bash scripts/train_policy.sh idp3 r1_cup-3d 0913_example
 #   bash scripts/train_policy.sh dp_224x224_r3m gr1_dex-image 0913_example
 
-dataset_path=/svl/u/ywlin/iDP3-on-Humanoids/Improved-3D-Diffusion-Policy/data/cup_1ep
+dataset_path=/svl/u/ywlin/iDP3-on-Humanoids/Improved-3D-Diffusion-Policy/data/cup_10ep_raw
+echo -e "\033[32mDataset path: ${dataset_path}\033[0m"
 
 
 DEBUG=False
-wandb_mode=online
+wandb_mode=offline
 
 
 alg_name=${1}

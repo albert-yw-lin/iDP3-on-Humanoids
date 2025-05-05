@@ -21,13 +21,16 @@ class R1CupDataset3D(BaseDataset):
             max_train_episodes=None,
             task_name=None,
             num_points=4096,
+            agent_pos_noise_std=0.0,
             ):
         super().__init__()
         cprint(f'Loading R1CupDataset from {zarr_path}', 'green')
         self.task_name = task_name
 
         self.num_points = num_points
-
+        self.agent_pos_noise_std = agent_pos_noise_std
+        if self.agent_pos_noise_std > 0:
+            cprint(f'Adding Gaussian noise to agent_pos with std {self.agent_pos_noise_std}', 'yellow')
 
         buffer_keys = [
             'state', 
@@ -73,12 +76,22 @@ class R1CupDataset3D(BaseDataset):
         return val_set
 
     def get_normalizer(self, mode='limits', **kwargs):
-        data = {'action': self.replay_buffer['action']}
+        # Original code with only action normalization
+        # data = {'action': self.replay_buffer['action']}
+        # normalizer = LinearNormalizer()
+        # normalizer.fit(data=data, last_n_dims=1, mode=mode, **kwargs)
+
+        # normalizer['point_cloud'] = SingleFieldLinearNormalizer.create_identity()
+        # normalizer['agent_pos'] = SingleFieldLinearNormalizer.create_identity()
+        
+        # Updated code with point_cloud and agent_pos normalization
+        data = {
+            'action': self.replay_buffer['action'],
+            'point_cloud': self.replay_buffer['point_cloud'],
+            'agent_pos': self.replay_buffer['state']
+        }
         normalizer = LinearNormalizer()
         normalizer.fit(data=data, last_n_dims=1, mode=mode, **kwargs)
-
-        normalizer['point_cloud'] = SingleFieldLinearNormalizer.create_identity()
-        normalizer['agent_pos'] = SingleFieldLinearNormalizer.create_identity()
         
         return normalizer
 
@@ -87,6 +100,12 @@ class R1CupDataset3D(BaseDataset):
 
     def _sample_to_data(self, sample):
         agent_pos = sample['state'][:,].astype(np.float32)
+        
+        # Add Gaussian noise to agent_pos if specified
+        if self.agent_pos_noise_std > 0:
+            noise = np.random.normal(0, self.agent_pos_noise_std, agent_pos.shape).astype(np.float32)
+            agent_pos = agent_pos + noise
+            
         point_cloud = sample['point_cloud'][:,].astype(np.float32)
         point_cloud = point_process.uniform_sampling_numpy(point_cloud, self.num_points)
         data = {
