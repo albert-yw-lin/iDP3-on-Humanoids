@@ -26,7 +26,7 @@ shape_meta: &shape_meta
 
 dataset:
   _target_: diffusion_policy_3d.dataset.r1_cup_dataset_image.R1CupDatasetImage
-  zarr_path: data/cup_10ep #NOTE: modeify this to 10ep or 1ep, or overwrite this in train_policy.sh
+  zarr_path: data/pick_cup_stand_5x10eps #NOTE: modeify this to 10ep or 1ep, or overwrite this in train_policy.sh
   horizon: ${horizon}
   pad_before: ${eval:'${n_obs_steps}-1'}
   pad_after: ${eval:'${n_action_steps}-1'}

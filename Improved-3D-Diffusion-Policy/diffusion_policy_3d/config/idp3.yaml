@@ -40,6 +40,7 @@ policy:
   diffusion_step_embed_dim: 128
   down_dims: [256, 512, 1024]
   
+  agent_pos_noise_std: 0.05  # Add Gaussian noise to agent position during training
 
   horizon: ${horizon}
   kernel_size: 5
@@ -121,7 +122,7 @@ training:
   gradient_accumulate_every: 1
   use_ema: True
   rollout_every: 400
-  checkpoint_every: 200
+  checkpoint_every: 500
   val_every: 100
   sample_every: 5
   max_train_steps: null
@@ -146,7 +147,7 @@ checkpoint:
   topk:
     monitor_key: test_mean_score
     mode: max
-    k: 0
+    k: 3
     format_str: 'epoch={epoch:04d}-test_mean_score={test_mean_score:.3f}.ckpt'
   save_last_ckpt: True # this only saves when save_ckpt is True
   save_last_snapshot: False

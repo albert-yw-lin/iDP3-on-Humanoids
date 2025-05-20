@@ -30,6 +30,7 @@ policy:
   n_action_steps: ${n_action_steps}
   n_groups: 8
   n_obs_steps: 2
+  agent_pos_noise_std: 0.05
  
   noise_scheduler:
     _target_: diffusers.schedulers.scheduling_ddim.DDIMScheduler
@@ -73,7 +74,12 @@ policy:
         contrast: 0.4
         saturation: 0.5
         hue: 0.08
-     
+      - _target_: torchvision.transforms.RandomAffine
+        degrees: 0
+        translate: [0.1, 0.1]
+        scale: [1.0, 1.0]
+        shear: 0
+        fill: 0
 
     use_group_norm: True
     share_rgb_model: False
@@ -116,11 +122,11 @@ training:
   resume: True
   lr_scheduler: cosine
   lr_warmup_steps: 500
-  num_epochs: 3001
+  num_epochs: 1001
   gradient_accumulate_every: 1
   use_ema: True
   rollout_every: 200
-  checkpoint_every: 100
+  checkpoint_every: 200
   val_every: 100
   sample_every: 5
   # steps per epoch
@@ -134,7 +140,8 @@ logging:
   group: ${exp_name}
   id: null
   mode: online
-  name: ${training.seed}
+  # name: ${training.seed}
+  name: ${exp_name}
   project: idp3_r1
   resume: true
   tags:
@@ -142,11 +149,11 @@ logging:
   - GalaxeaR1
 
 checkpoint:
-  save_ckpt: False
+  save_ckpt: True
   topk:
     monitor_key: test_mean_score
     mode: max
-    k: 1
+    k: 3
     format_str: 'epoch={epoch:04d}-test_mean_score={test_mean_score:.3f}.ckpt'
   save_last_ckpt: True
   save_last_snapshot: False

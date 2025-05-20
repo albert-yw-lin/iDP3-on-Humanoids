@@ -11,6 +11,7 @@ import os
 import h5py
 import zarr
 from tqdm import tqdm
+import time
 
 def convert_hdf5_to_zarr(hdf5_path, zarr_path):
     """
@@ -82,11 +83,18 @@ def convert_hdf5_to_zarr(hdf5_path, zarr_path):
         
         # Copy data
         frame_idx = 0
-        for ep_idx, ep_key in enumerate(tqdm(episode_keys)):
+        total_state_time = 0
+        total_action_time = 0
+        total_pointcloud_time = 0
+        total_image_time = 0
+        
+        pbar = tqdm(episode_keys, desc='Processing')
+        for ep_idx, ep_key in enumerate(pbar):
             episode = h5file[ep_key]
             ep_len = episode_lengths[ep_idx]
+            
             # State data
-            # Base velocity
+            state_start = time.time()
             states[frame_idx:frame_idx+ep_len, 0:3] = episode['obs/odom/base_velocity'][:]
             # Torso
             states[frame_idx:frame_idx+ep_len, 3:7] = episode['obs/joint_state/torso/joint_position'][:]
@@ -100,30 +108,53 @@ def convert_hdf5_to_zarr(hdf5_path, zarr_path):
             states[frame_idx:frame_idx+ep_len, 14:20] = episode['obs/joint_state/right_arm/joint_position'][:, :-1]
             # Right gripper
             states[frame_idx:frame_idx+ep_len, 20:21] = episode['obs/gripper_state/right_gripper/gripper_position'][:][:, np.newaxis]  
+            state_time = time.time() - state_start
+            total_state_time += state_time
             
             # Action data
+            action_start = time.time()
             actions[frame_idx:frame_idx+ep_len, 0:3] = episode['action/mobile_base'][:]
             actions[frame_idx:frame_idx+ep_len, 3:7] = episode['action/torso'][:]
             actions[frame_idx:frame_idx+ep_len, 7:13] = episode['action/left_arm'][:]
             actions[frame_idx:frame_idx+ep_len, 13:14] = episode['action/left_gripper'][:][:, np.newaxis]
             actions[frame_idx:frame_idx+ep_len, 14:20] = episode['action/right_arm'][:]
             actions[frame_idx:frame_idx+ep_len, 20:21] = episode['action/right_gripper'][:][:, np.newaxis]
+            action_time = time.time() - action_start
+            total_action_time += action_time
             
             # Point cloud data
-            xyz = episode['obs/point_cloud/fused/xyz'][:]
-            rgb = episode['obs/point_cloud/fused/rgb'][:]
+            pointcloud_start = time.time()
+            xyz = episode['obs/point_cloud/fused/xyz'][:]  # shape: (T, N, 3)
+            rgb = episode['obs/point_cloud/fused/rgb'][:]  # shape: (T, N, 3)
             
-            for t in range(ep_len):
-                # Combine xyz and rgb into single array
-                combined = np.concatenate([xyz[t], rgb[t]], axis=1)
-                point_clouds[frame_idx+t] = combined
+            # Vectorized concatenation along the last axis for all time steps at once
+            combined = np.concatenate([xyz, rgb], axis=2)  # shape: (T, N, 6)
+            point_clouds[frame_idx:frame_idx+ep_len] = combined
+            
+            pointcloud_time = time.time() - pointcloud_start
+            total_pointcloud_time += pointcloud_time
             
             # Image data
+            image_start = time.time()
             head_imgs[frame_idx:frame_idx+ep_len] = episode['obs/rgb/head/img'][:]
             left_wrist_imgs[frame_idx:frame_idx+ep_len] = episode['obs/rgb/left_wrist/img'][:]
             right_wrist_imgs[frame_idx:frame_idx+ep_len] = episode['obs/rgb/right_wrist/img'][:]
+            image_time = time.time() - image_start
+            total_image_time += image_time
+            
+            # Update progress bar with timing info
+            pbar.set_description(
+                f'State: {state_time:.2f}s | Action: {action_time:.2f}s | PCD: {pointcloud_time:.2f}s | Img: {image_time:.2f}s'
+            )
                 
             frame_idx += ep_len
+        
+        print(f"\nTotal Timing Statistics:")
+        print(f"State data processing time: {total_state_time:.2f}s")
+        print(f"Action data processing time: {total_action_time:.2f}s")
+        print(f"Point cloud processing time: {total_pointcloud_time:.2f}s")
+        print(f"Image processing time: {total_image_time:.2f}s")
+        print(f"Total processing time: {total_state_time + total_action_time + total_pointcloud_time + total_image_time:.2f}s")
     
     print(f"Conversion completed. Zarr dataset saved to {zarr_path}")
     print(f"Total frames: {total_frames}, Total episodes: {len(episode_keys)}")

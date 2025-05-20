@@ -34,13 +34,16 @@ class DiffusionImagePolicy(BasePolicy):
             use_depth=False,
             use_depth_only=False,
             obs_encoder: TimmObsEncoder = None,
+            agent_pos_noise_std=0.0,
             # parameters passed to step
             **kwargs):
         super().__init__()
 
         self.use_depth = use_depth
         self.use_depth_only = use_depth_only
-        cprint(f"use_depth: {use_depth}, use_depth_only: {use_depth_only}", 'red')
+        self.agent_pos_noise_std = agent_pos_noise_std
+        cprint(f"[DiffusionImagePolicy] agent_pos_noise_std: {agent_pos_noise_std}", 'red')
+        cprint(f"[DiffusionImagePolicy] use_depth: {use_depth}, use_depth_only: {use_depth_only}", 'red')
         # parse shape_meta
         action_shape = shape_meta['action']['shape']
         self.action_shape = action_shape
@@ -306,6 +309,11 @@ class DiffusionImagePolicy(BasePolicy):
         # normalize input
         assert 'valid_mask' not in batch
         nobs = self.normalizer.normalize(batch['obs'])
+        
+        # Add Gaussian noise to agent_pos if noise_std > 0
+        if self.agent_pos_noise_std > 0:
+            noise = torch.randn_like(nobs['agent_pos']) * self.agent_pos_noise_std
+            nobs['agent_pos'] = nobs['agent_pos'] + noise
         
         # Process each camera view
         for key in ['head_image', 'left_wrist_image', 'right_wrist_image']:

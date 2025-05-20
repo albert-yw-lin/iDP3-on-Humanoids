@@ -37,12 +37,14 @@ class DiffusionPointcloudPolicy(BasePolicy):
             pointnet_type="pointnet",
             pointcloud_encoder_cfg=None,
             point_downsample=False,
+            agent_pos_noise_std=0.0,
             # parameters passed to step
             **kwargs):
         super().__init__()
 
         self.condition_type = condition_type
-
+        self.agent_pos_noise_std = agent_pos_noise_std
+        cprint(f"[DiffusionPointcloudPolicy] agent_pos_noise_std: {self.agent_pos_noise_std}", "yellow")
 
         # parse shape_meta
         action_shape = shape_meta['action']['shape']
@@ -127,8 +129,11 @@ class DiffusionPointcloudPolicy(BasePolicy):
         print_params(self)
 
     def forward(self, obs_dict: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:
+        """
+        used only for deployment
+        """
         obs_dict = obs_dict.copy()
-       
+        print("this is deployment")
             
         # normalize input
         nobs = self.normalizer.normalize(obs_dict)
@@ -232,6 +237,7 @@ class DiffusionPointcloudPolicy(BasePolicy):
 
     def predict_action(self, obs_dict: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:
         """
+        used only for validation
         obs_dict: must include "obs" key
         result: must include "action" key
         """
@@ -313,10 +319,18 @@ class DiffusionPointcloudPolicy(BasePolicy):
         self.normalizer.load_state_dict(normalizer.state_dict())
 
     def compute_loss(self, batch):
+        """
+        used only for training
+        """
         # normalize input
         assert 'valid_mask' not in batch
         nobs = self.normalizer.normalize(batch['obs'])
         nactions = self.normalizer['action'].normalize(batch['action'])
+
+        # Add Gaussian noise to agent_pos if noise_std > 0
+        if self.agent_pos_noise_std > 0:
+            noise = torch.randn_like(nobs['agent_pos']) * self.agent_pos_noise_std
+            nobs['agent_pos'] = nobs['agent_pos'] + noise
 
         if not self.use_pc_color:
             nobs['point_cloud'] = nobs['point_cloud'][..., :3]

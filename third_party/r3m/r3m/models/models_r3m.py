@@ -93,7 +93,7 @@ class R3M(nn.Module):
                         self.normlayer,
                 )
         ## Input must be [0, 1], [3,244,244]
-        # we have divided by 255.0 in the preprocess function
+        # we have divided by 255.0 in the preprocess function (verified by ywlin)
         # obs = obs.float() /  255.0
         obs_p = preprocess(obs)
         h = self.convnet(obs_p)

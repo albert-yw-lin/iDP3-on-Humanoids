@@ -75,7 +75,9 @@ class R1CupDatasetImage(BaseDataset):
         return val_set
 
     def get_normalizer(self, mode='limits', **kwargs):
-        data = {'action': self.replay_buffer['action']}
+        data = {'action': self.replay_buffer['action'],
+                'agent_pos': self.replay_buffer['state']
+                }
         normalizer = LinearNormalizer()
         normalizer.fit(data=data, last_n_dims=1, mode=mode, **kwargs)
         if self.use_img:
@@ -87,7 +89,7 @@ class R1CupDatasetImage(BaseDataset):
         if self.use_depth:
             normalizer['depth'] = SingleFieldLinearNormalizer.create_identity()
         
-        normalizer['agent_pos'] = SingleFieldLinearNormalizer.create_identity()
+        # normalizer['agent_pos'] = SingleFieldLinearNormalizer.create_identity()
         
         return normalizer
 
