@@ -98,7 +98,13 @@ class R1CupDatasetImage(BaseDataset):
 
     def _sample_to_data(self, sample):
         agent_pos = sample['state'][:,].astype(np.float32)
-       
+        action = sample['action'][:,].astype(np.float32)
+
+        #NOTE: since normalizer is set before sampling,
+        # we need to rectify the gripper action/state BEFORE forming the dataset,
+        # not here,
+        # otherwise the normalizer parameters will be incorrect
+
         if self.use_img:
             # Get images from all three cameras
             head_img = sample['head_img'][:,].astype(np.float32)
@@ -112,7 +118,7 @@ class R1CupDatasetImage(BaseDataset):
             'obs': {
                 'agent_pos': agent_pos,
                 },
-            'action': sample['action'].astype(np.float32)}
+            'action': action}
         if self.use_img:
             data['obs']['head_image'] = head_img
             data['obs']['left_wrist_image'] = left_wrist_img

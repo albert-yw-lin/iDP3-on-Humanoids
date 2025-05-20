@@ -32,7 +32,7 @@ def visualize_hdf5_episode(hdf5_path, episode_idx=0):
         episode = h5file[ep_key]
         
         # Plot joint positions and actions
-        fig, axes = plt.subplots(3, 1, figsize=(10, 12))
+        fig, axes = plt.subplots(4, 1, figsize=(10, 16))
         
         # Plot torso positions
         if 'obs/joint_state/torso/joint_position' in episode:
@@ -66,6 +66,17 @@ def visualize_hdf5_episode(hdf5_path, episode_idx=0):
             axes[2].set_xlabel('Time Steps')
             axes[2].set_ylabel('Action')
             axes[2].legend()
+
+        # Plot gripper data
+        if 'obs/joint_state/right_arm/joint_position' in episode:
+            gripper_pos = episode['obs/joint_state/right_arm/joint_position'][:, 6:]  # Last dimension is gripper
+            time = np.arange(len(gripper_pos))
+            for i in range(gripper_pos.shape[1]):
+                axes[3].plot(time, gripper_pos[:, i], label=f'Gripper {i+1}')
+            axes[3].set_title('Gripper Position')
+            axes[3].set_xlabel('Time Steps')
+            axes[3].set_ylabel('Position')
+            axes[3].legend()
         
         plt.tight_layout()
         plt.savefig('hdf5_episode_visualization.png')
@@ -125,7 +136,7 @@ def visualize_zarr_data(zarr_path, episode_idx=0):
     end_idx = episode_ends[episode_idx]
     
     # Plot state and action data
-    fig, axes = plt.subplots(3, 1, figsize=(10, 12))
+    fig, axes = plt.subplots(4, 1, figsize=(10, 16))
     
     # Plot torso positions (indices 3-7)
     states = root['data/state'][start_idx:end_idx]
@@ -155,6 +166,14 @@ def visualize_zarr_data(zarr_path, episode_idx=0):
     axes[2].set_xlabel('Time Steps')
     axes[2].set_ylabel('Action')
     axes[2].legend()
+
+    # Plot gripper data (index 20)
+    gripper_pos = states[:, 20:21]  # Assuming gripper is at index 20
+    axes[3].plot(time, gripper_pos, label='Gripper')
+    axes[3].set_title('Gripper Position')
+    axes[3].set_xlabel('Time Steps')
+    axes[3].set_ylabel('Position')
+    axes[3].legend()
     
     plt.tight_layout()
     plt.savefig('zarr_episode_visualization.png')

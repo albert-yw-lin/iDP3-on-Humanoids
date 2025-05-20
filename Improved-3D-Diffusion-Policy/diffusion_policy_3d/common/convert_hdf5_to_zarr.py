@@ -103,11 +103,16 @@ def convert_hdf5_to_zarr(hdf5_path, zarr_path):
             # Left gripper. 
             # Debug note: the first[:] converts hdpy.Dataset object to numpy array, 
             # the second[:, np.newaxis] converts 1D array to 2D array
-            states[frame_idx:frame_idx+ep_len, 13:14] = episode['obs/gripper_state/left_gripper/gripper_position'][:][:, np.newaxis]
+            # NOTE: we also do the gripper rectification here
+            left_gripper_state = episode['obs/gripper_state/left_gripper/gripper_position'][:]
+            left_gripper_state = (left_gripper_state > 50).astype(np.float32)
+            states[frame_idx:frame_idx+ep_len, 13:14] = left_gripper_state[:, np.newaxis]
             # Right arm (exclude gripper)
             states[frame_idx:frame_idx+ep_len, 14:20] = episode['obs/joint_state/right_arm/joint_position'][:, :-1]
             # Right gripper
-            states[frame_idx:frame_idx+ep_len, 20:21] = episode['obs/gripper_state/right_gripper/gripper_position'][:][:, np.newaxis]  
+            right_gripper_state = episode['obs/gripper_state/right_gripper/gripper_position'][:]
+            right_gripper_state = (right_gripper_state > 50).astype(np.float32)
+            states[frame_idx:frame_idx+ep_len, 20:21] = right_gripper_state[:, np.newaxis]  
             state_time = time.time() - state_start
             total_state_time += state_time
             
@@ -116,9 +121,15 @@ def convert_hdf5_to_zarr(hdf5_path, zarr_path):
             actions[frame_idx:frame_idx+ep_len, 0:3] = episode['action/mobile_base'][:]
             actions[frame_idx:frame_idx+ep_len, 3:7] = episode['action/torso'][:]
             actions[frame_idx:frame_idx+ep_len, 7:13] = episode['action/left_arm'][:]
-            actions[frame_idx:frame_idx+ep_len, 13:14] = episode['action/left_gripper'][:][:, np.newaxis]
+            # Left gripper action
+            left_gripper_action = episode['action/left_gripper'][:]
+            left_gripper_action = (left_gripper_action > 50).astype(np.float32)
+            actions[frame_idx:frame_idx+ep_len, 13:14] = left_gripper_action[:, np.newaxis]
             actions[frame_idx:frame_idx+ep_len, 14:20] = episode['action/right_arm'][:]
-            actions[frame_idx:frame_idx+ep_len, 20:21] = episode['action/right_gripper'][:][:, np.newaxis]
+            # Right gripper action
+            right_gripper_action = episode['action/right_gripper'][:]
+            right_gripper_action = (right_gripper_action > 50).astype(np.float32)
+            actions[frame_idx:frame_idx+ep_len, 20:21] = right_gripper_action[:, np.newaxis]
             action_time = time.time() - action_start
             total_action_time += action_time
             
